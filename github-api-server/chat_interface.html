@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        #chat-container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #chat-box {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user {
+            background-color: #e0f7fa;
+            text-align: right;
+        }
+        .server {
+            background-color: #e8eaf6;
+            text-align: left;
+        }
+        #user-input {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #send-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #send-button:hover {
+            background-color: #004d40;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="Enter your prompt here..." />
+    <button id="send-button" onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+
+    function displayMessage(message, sender) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.classList.add(sender);
+        messageElement.innerText = message;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;  // Auto scroll to the bottom
+    }
+
+    async function sendMessage() {
+        const prompt = userInput.value.trim();
+        if (prompt) {
+            // Display user's message in chat
+            displayMessage(prompt, 'user');
+            userInput.value = ''; // Clear input field
+
+            // Prepare the data to send to the Flask server
+            const requestData = {
+                action: 'query_ai',
+                params: { prompt: prompt }
+            };
+
+            try {
+                // Send the message to the Flask server
+                const response = await fetch('http://127.0.0.1:5000/mcp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                // Get the response from Flask server
+                const data = await response.json();
+
+                if (data.ai_response) {
+                    // Display server's response in chat
+                    displayMessage(data.ai_response, 'server');
+                } else {
+                    displayMessage('Error: Could not fetch response from the server.', 'server');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                displayMessage('Error: Failed to communicate with the server.', 'server');
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
